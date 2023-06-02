@@ -1,0 +1,9 @@
+- hosts: Master
+  tasks:
+    - name: Listar nodes de cluster
+      command: kubectl get nodes
+      register: get_nodes
+    - name: Nodes del cluster 
+      debug:
+        var: get_nodes.stdout_lines
+      when: "'Master' in group_names"

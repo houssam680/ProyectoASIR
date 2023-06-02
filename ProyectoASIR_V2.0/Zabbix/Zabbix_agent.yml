@@ -1,0 +1,31 @@
+- name: Instalar y configurar el agente de Zabbix
+  hosts: servidores
+  become: true
+  vars:
+    zabbix_server: 34.239.87.59
+    zabbix_hostname: ip-172-31-95-230
+
+  tasks:
+    - name: Actualizar caché de apt
+      apt:
+        update_cache: yes
+
+    - name: Instalar paquete zabbix-agent
+      apt:
+        name: zabbix-agent
+        state: present
+
+    - name: Copiar archivo de configuración del agente
+      template:
+        src: var/zabbix_agentd.conf.j2
+        dest: /etc/zabbix/zabbix_agentd.conf
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
+
+    - name: Reiniciar el servicio zabbix-agent
+      service:
+        name: zabbix-agent
+        state: restarted
+      become: true

@@ -1,0 +1,62 @@
+- hosts: Master
+  become: true
+  tasks:
+  - name: Ejecutar kubeadm init con pod-network-cidr
+    shell: sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+- hosts: Master_amazon
+  become: true
+  tasks:
+    - name: Crear la carpeta .kube en /home/ubuntu (servidor Amazon)
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+        mode: '0755'
+
+    - name: Copiar el archivo de configuracion de Kubernetes a la carpeta .kube (servidor Amazon)
+      become: true
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu/.kube/config
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+- hosts: Master_local
+  become: true
+  tasks:
+    - name: Crear la carpeta .kube en el servidor local
+      file:
+        path: /home/ubuntu_local/.kube
+        state: directory
+        mode: '0755'
+    - name: Copiar el archivo de configuracion de Kubernetes a la carpeta .kube en el servidor local
+      become: true
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu_local/.kube/config
+        remote_src: yes
+        owner: ubuntu_local
+        group: ubuntu_local
+        mode: '0600'
+- hosts: Master
+  become: true
+  tasks:
+    - name: Install Flannel network plugin
+      become: no
+      shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
+
+    - name: Ejecutar comando kubectl en servidor Amazon
+      become: no
+      shell: kubectl get pods --all-namespaces
+      register: kubectl_output
+
+    - name: Ejecutar comando kubectl en el servidor local
+      become: no
+      shell: kubectl get pods --all-namespaces
+      register: kubectl_output_local
+
+    - name: Mostrar la salida del comando kubectl en los servidores (Todos los names spaces que usa kubenetes. )
+      debug:
+        var: kubectl_output.stdout_lines
+
+

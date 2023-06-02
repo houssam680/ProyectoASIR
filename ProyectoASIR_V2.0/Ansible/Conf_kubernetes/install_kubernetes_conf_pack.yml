@@ -1,0 +1,77 @@
+- hosts: servidores
+  become: true
+  tasks:
+    - name: Reiniciar containerd
+      systemd:
+        name: containerd
+        state: restarted
+
+    - name: Habilitar y reiniciar Docker
+      systemd:
+        name: docker
+        state: restarted
+        enabled: yes
+
+    - name: Reiniciar Docker
+      systemd:
+        name: docker
+        state: restarted
+
+    - name: Desactivar swap
+      shell: swapoff -a
+
+    - name: Comentar línea de swap en /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regex: '^.*\sswap\s.*$'
+        line: '#\g<0>'
+
+    - name: Comentar línea de swap en /etc/fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^.*\sswap\s.*$'
+        replace: '#\g<0>'
+
+    - name: Configurar net.bridge.bridge-nf-call-iptables
+      sysctl:
+        name: net.bridge.bridge-nf-call-iptables
+        value: 1
+
+    - name: Add Kubernetes apt key
+      shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
+
+    - name: Add Kubernetes apt repository
+      shell: sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+
+    - name: Install Kubernetes packages
+      apt:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+          - kubernetes-cni
+        state: present
+
+    - name: apt-mark hold {{ item }}
+      command: apt-mark hold {{ item }}
+      with_items:
+       - kubelet
+       - kubeadm
+       - kubectl
+
+    - name: Add kubectl completion to .bashrc
+      lineinfile:
+        path: ~/.bashrc
+        line: 'source <(kubectl completion bash)'
+        create: yes
+        state: present
+
+    - name: Desactivar swap
+      command: swapoff -a
+
+    - name: Habilitar IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: 1
+        state: present
+        reload: yes

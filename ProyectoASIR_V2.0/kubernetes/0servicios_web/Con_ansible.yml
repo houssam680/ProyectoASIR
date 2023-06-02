@@ -1,0 +1,25 @@
+
+- name: Copiar archivos YAML al servidor master
+  hosts: Master
+  tasks:
+    - name: Copiar archivos YAML
+      copy:
+        src: ~/ProyectoASIR_V2.0/kubernetes/servicios_web/web_dmz.yml
+        dest: /kubernetes/servicios
+
+    - name: Copiar archivos YAML
+      copy:
+        src: ~/ProyectoASIR_V2.0/kubernetes/servicios_web/replica_web.yml
+        dest: /kubernetes/servicios
+
+- name: Crear Namespace y aplicar manifiestos
+  hosts: Master
+  tasks:
+    - name: Crear Namespace
+      command: kubectl create namespace webhoussamdmz
+
+    - name: Aplicar manifiestos
+      command: kubectl apply -f /kubernetes/servicios/web_dmz.yml
+
+    - name: Aplicar manifiestos
+      command: kubectl apply -f /kubernetes/servicios/replica_web.yml

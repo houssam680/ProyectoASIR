@@ -1,0 +1,101 @@
+
+- name: Instalar Zabbix en Ubuntu
+  hosts: Master
+  become: yes
+
+  tasks:
+    - name: Actualizar lista de paquetes
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Instalar paquetes necesarios
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      loop:
+        - apache2
+        - mysql-server
+        - php
+        - php-mysql
+        - php-gd
+        - php-bcmath
+        - php-xml
+        - php-mbstring
+
+    - name: Habilitar módulo PHP
+      command: phpenmod mbstring
+      become: yes
+
+    - name: Reiniciar servicio Apache
+      service:
+        name: apache2
+        state: restarted
+      become: yes
+
+    - name: Descargar paquete de instalación de Zabbix
+      get_url:
+        url: "https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu20.04_all.deb"
+        dest: /tmp/zabbix-release.deb
+
+    - name: Instalar paquete de Zabbix
+      apt:
+        deb: /tmp/zabbix-release.deb
+        state: present
+      become: yes
+
+    - name: Actualizar lista de paquetes después de instalar el repositorio de Zabbix
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Instalar servidor de Zabbix y frontend web
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      loop:
+        - zabbix-server-mysql
+        - zabbix-frontend-php
+
+    - name: Configurar base de datos MySQL/MariaDB para Zabbix
+      mysql_db:
+        name: zabbix
+        state: present
+        login_user: root
+        login_password: Houssam2000
+        encoding: utf8
+        collation: utf8_bin
+      become: yes
+
+    - name: Importar esquema y datos iniciales a la base de datos de Zabbix
+      command: zcat /usr/share/doc/zabbix-server-mysql/create.sql.gz | mysql -u root -p{{ tu_password }} zabbix
+      become: yes
+
+    - name: Configurar archivo de configuración de Zabbix
+      template:
+        src: var/zabbix_server.conf.j2
+        dest: /etc/zabbix/zabbix_server.conf
+      become: yes
+
+    - name: Reiniciar servicios de Zabbix
+      service:
+        name: "{{ item }}"
+        state: restarted
+      become: yes
+      loop:
+        - zabbix-server
+        - apache2
+
+    - name: Configurar servidor web Apache para Zabbix
+      template:
+        src: var/zabbix.conf.php.j2
+        dest: /etc/zabbix/web/zabbix.conf.php
+      become: yes
+
+    - name: Reiniciar servicio Apache después de configurar Zabbix
+      service:
+        name: apache2
+        state: restarted
+      become: yes

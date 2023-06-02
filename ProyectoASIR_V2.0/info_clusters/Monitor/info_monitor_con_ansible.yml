@@ -1,0 +1,26 @@
+
+- name: Obtener información de monitoreo
+  hosts: Master
+  tasks:
+    - name: Ejecutar comando kubectl all
+      command: kubectl -n monitoring get all
+      register: kubectl_monitoring_all
+    - name: Imprimir salida de kubectl all
+      debug:
+        var: kubectl_monitoring_all.stdout_lines
+
+    - name: Ejecutar comando kubectl get services -n monitoring
+      command: kubectl get services -n monitoring
+      register: kubectl_monitoring_services
+
+    - name: Imprimir salida de kubectl get services -n monitoring
+      debug:
+        var: kubectl_monitoring_services.stdout_lines
+
+    - name: Ejecutar comando kubectl get pods -n monitoring
+      command: kubectl get pods -n monitoring
+      register: kubectl_monitoring_pods
+
+    - name: Imprimir salida de kubectl get pods -n monitoring
+      debug:
+        var: kubectl_monitoring_pods.stdout_lines

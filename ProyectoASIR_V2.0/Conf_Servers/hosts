@@ -1,0 +1,17 @@
+[servidores]
+Master_amazon ansible_host=52.87.184.216 ansible_user=ubuntu
+Worker1_amazon ansible_host=54.91.253.131 ansible_user=ubuntu
+Worker2_amazon ansible_host=3.87.147.148 ansible_user=ubuntu
+Worker3_amazon ansible_host=34.224.64.190 ansible_user=ubuntu
+Master_local ansible_host=192.168.202.216 ansible_user=ubuntu_local ansible_become_pass=2001
+Worker_servidor1_local ansible_host=192.168.202.217 ansible_user=ubuntu_local ansible_become_pass=2001
+Worker_servidor2_local ansible_host=192.168.202.218 ansible_user=ubuntu_local ansible_become_pass=2001
+[Master]
+Master_amazon ansible_host=52.87.184.216 ansible_user=ubuntu
+Master_local ansible_host=192.168.202.216 ansible_user=ubuntu_local ansible_become_pass=2001
+[Worker]
+Worker1_amazon ansible_host=54.91.253.131 ansible_user=ubuntu
+Worker2_amazon ansible_host=3.87.147.148 ansible_user=ubuntu
+Worker3_amazon ansible_host=34.224.64.190 ansible_user=ubuntu
+Worker_servidor1_local ansible_host=192.168.202.217 ansible_user=ubuntu_local ansible_become_pass=2001
+Worker_servidor2_local ansible_host=192.168.202.218 ansible_user=ubuntu_local ansible_become_pass=2001

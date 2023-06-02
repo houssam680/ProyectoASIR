@@ -1,0 +1,94 @@
+- name: Eliminar Docker e instalar paquetes necesarios para la confguracion 
+  hosts: servidores
+  become: true
+  become_method: sudo
+  vars:
+    docker_users:
+      - ubuntu
+      - ubuntu_local
+  tasks:
+    - name: Eliminar paquetes de Docker
+      apt:
+        name:
+          - docker
+          - docker-engine
+          - docker.io
+          - containerd
+          - runc
+        state: absent
+    - name: Actualizar paquetes
+      apt:
+        update_cache: yes
+    - name: Instalar paquetes necesarios
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+    - name: Crear directorio /etc/apt/keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+    - name: Añadir el repositorio de Docker al archivo /etc/apt/sources.list.d/docker.list
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    - name: Actualizar la lista de paquetes
+      apt:
+        update_cache: yes
+    - name: Cambiar los permisos del archivo /etc/apt/keyrings/docker.gpg
+      file:
+        path: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+    - name: Instalar paquetes de Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+    - name: Crear el directorio /etc/containerd
+      file:
+        path: /etc/containerd
+        state: directory
+    - name: Configurar containerd y guardar la configuración en /etc/containerd/config.toml
+      shell: 'sudo containerd config default | sudo tee /etc/containerd/config.toml'
+    - name: Cambiar la configuración de SystemdCgroup a true en /etc/containerd/config.toml
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+    - name: Reiniciar containerd
+      service:
+        name: containerd
+        state: restarted
+
+    - name: Configurar el demonio Docker
+      copy:
+        content: |
+          {
+           "exec-opts": ["native.cgroupdriver=systemd"]
+          }
+        dest: /etc/docker/daemon.json
+
+    - name: Reiniciar Docker
+      service:
+        name: docker
+        state: restarted
+
+    - name: Agregar usuarios al grupo docker
+      user:
+        name: "{{ item }}"
+        append: yes
+        groups: docker
+      loop: "{{ docker_users }}"
+
+    - name: Habilitar e iniciar el servicio Docker
+      service:
+        name: docker
+        enabled: yes
+        state: started

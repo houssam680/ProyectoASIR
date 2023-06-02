@@ -1,0 +1,39 @@
+- hosts: Master
+  tasks:
+    - name: Registar el token por añadir los nodes 
+      command: kubeadm token create --print-join-command
+      register: join_command
+      become: true
+      become_method: sudo
+
+    - name: Listar nodes de cluster
+      command: kubectl get nodes
+      register: get_nodes
+
+    - name: Nodes del cluster 
+      debug:
+        var: get_nodes.stdout_lines
+      when: "'Master' in group_names"
+- hosts: Worker
+  tasks:
+    - name: Añadir el node Worker al cluster de kubernetes Amazon
+      become: true
+      become_method: sudo
+      apt:
+        update_cache: yes
+- hosts: Master_amazon
+  tasks:
+    - name: Listar nodes de cluster de nuevo 
+      command: kubectl get nodes
+      register: get_nodes
+    - name: Mostrar la salida de los nodos
+      debug:
+        var: get_nodes.stdout_lines
+- hosts: Master_local
+  tasks:
+    - name: Listar nodes de cluster de nuevo 
+      command: kubectl get nodes
+      register: get_nodes
+    - name: Mostrar la salida de los nodos
+      debug:
+        var: get_nodes.stdout_lines
