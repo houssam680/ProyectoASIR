@@ -3,7 +3,7 @@
   become: true
   vars:
     zabbix_server: 34.239.87.59
-    zabbix_hostname: ip-172-31-95-230
+    zabbix_hostname: zabbix
 
   tasks:
     - name: Actualizar caché de apt
